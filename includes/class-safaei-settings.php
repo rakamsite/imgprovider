@@ -49,6 +49,8 @@ class Safaei_Settings {
 		self::add_field( 'gallery_count', __( 'Gallery Count', 'safaei-auto-image-loader' ), 'number' );
 		self::add_field( 'skip_if_has_image', __( 'Skip if Has Image', 'safaei-auto-image-loader' ), 'checkbox' );
 		self::add_field( 'cron_interval_minutes', __( 'Cron Interval (minutes)', 'safaei-auto-image-loader' ), 'number' );
+		self::add_field( 'daily_quota_limit', __( 'Daily Quota Limit', 'safaei-auto-image-loader' ), 'number' );
+		self::add_field( 'stop_when_limit_reached', __( 'Stop When Limit Reached', 'safaei-auto-image-loader' ), 'checkbox' );
 	}
 
 	private static function add_field( $key, $label, $type ) {
@@ -83,6 +85,8 @@ class Safaei_Settings {
 		$sanitized['gallery_count'] = max( 1, absint( $input['gallery_count'] ?? $defaults['gallery_count'] ) );
 		$sanitized['skip_if_has_image'] = ! empty( $input['skip_if_has_image'] );
 		$sanitized['cron_interval_minutes'] = max( 1, absint( $input['cron_interval_minutes'] ?? $defaults['cron_interval_minutes'] ) );
+		$sanitized['daily_quota_limit'] = max( 0, absint( $input['daily_quota_limit'] ?? $defaults['daily_quota_limit'] ) );
+		$sanitized['stop_when_limit_reached'] = ! empty( $input['stop_when_limit_reached'] );
 
 		return $sanitized;
 	}
@@ -129,6 +133,7 @@ class Safaei_Settings {
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'Safaei Image Loader', 'safaei-auto-image-loader' ); ?></h1>
+			<?php Safaei_Usage::render_widget( 'settings' ); ?>
 			<form method="post" action="options.php">
 				<?php
 				settings_fields( 'safaei_image_loader_settings_group' );

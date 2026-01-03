@@ -17,6 +17,7 @@ class Safaei_Image_Loader {
 
 		Safaei_Settings::init();
 		Safaei_Queue::init();
+		Safaei_Usage::init();
 		Safaei_Worker::init();
 		Safaei_Admin_List::init();
 		Safaei_Metabox::init();
@@ -74,6 +75,8 @@ class Safaei_Image_Loader {
 			'gallery_count'          => 3,
 			'skip_if_has_image'      => true,
 			'cron_interval_minutes'  => 5,
+			'daily_quota_limit'      => 100,
+			'stop_when_limit_reached'=> true,
 		);
 	}
 

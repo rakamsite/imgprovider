@@ -56,6 +56,11 @@ class Safaei_Queue {
 		}
 		check_admin_referer( 'safaei_enqueue_job' );
 
+		if ( Safaei_Usage::is_quota_reached() ) {
+			wp_safe_redirect( add_query_arg( 'safaei_quota_reached', 1, wp_get_referer() ?: admin_url( 'edit.php?post_type=product' ) ) );
+			exit;
+		}
+
 		$product_id = absint( $_GET['product_id'] ?? 0 );
 		if ( $product_id ) {
 			self::enqueue_job( $product_id );
@@ -69,6 +74,10 @@ class Safaei_Queue {
 		check_ajax_referer( 'safaei_image_loader_nonce', 'nonce' );
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {
 			wp_send_json_error( array( 'message' => __( 'Unauthorized', 'safaei-auto-image-loader' ) ) );
+		}
+
+		if ( Safaei_Usage::is_quota_reached() ) {
+			wp_send_json_error( array( 'message' => __( 'Daily quota reached', 'safaei-auto-image-loader' ) ) );
 		}
 
 		$product_id = absint( $_POST['product_id'] ?? 0 );

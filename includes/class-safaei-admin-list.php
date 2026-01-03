@@ -11,8 +11,9 @@ class Safaei_Admin_List {
 		add_filter( 'post_row_actions', array( __CLASS__, 'add_row_action' ), 10, 2 );
 		add_filter( 'bulk_actions-edit-product', array( __CLASS__, 'register_bulk_action' ) );
 		add_filter( 'handle_bulk_actions-edit-product', array( __CLASS__, 'handle_bulk_action' ), 10, 3 );
-		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
-		add_action( 'admin_footer', array( __CLASS__, 'render_modal' ) );
+
+		add_action( 'manage_posts_extra_tablenav', array( __CLASS__, 'render_quota_widget' ), 10, 1 );
+
 	}
 
 	public static function add_column( $columns ) {
@@ -31,6 +32,14 @@ class Safaei_Admin_List {
 
 	public static function add_row_action( $actions, $post ) {
 		if ( 'product' !== $post->post_type || ! current_user_can( 'manage_woocommerce' ) ) {
+			return $actions;
+		}
+
+		if ( Safaei_Usage::is_quota_reached() ) {
+			$actions['safaei_enqueue'] = sprintf(
+				'<span class="safaei-disabled-action">%s</span>',
+				esc_html__( 'Find Image', 'safaei-auto-image-loader' )
+			);
 			return $actions;
 		}
 
@@ -59,6 +68,9 @@ class Safaei_Admin_List {
 	}
 
 	public static function register_bulk_action( $actions ) {
+		if ( Safaei_Usage::is_quota_reached() ) {
+			return $actions;
+		}
 		$actions['safaei_find_images'] = __( 'Safaei: Find Images', 'safaei-auto-image-loader' );
 		return $actions;
 	}
@@ -72,6 +84,10 @@ class Safaei_Admin_List {
 			return $redirect_url;
 		}
 
+		if ( Safaei_Usage::is_quota_reached() ) {
+			return add_query_arg( 'safaei_quota_reached', 1, $redirect_url );
+		}
+
 		$count = 0;
 		foreach ( $post_ids as $post_id ) {
 			if ( Safaei_Queue::enqueue_job( $post_id ) ) {
@@ -80,6 +96,19 @@ class Safaei_Admin_List {
 		}
 
 		return add_query_arg( 'safaei_enqueued', $count, $redirect_url );
+	}
+
+	public static function render_quota_widget( $which ) {
+		if ( 'top' !== $which ) {
+			return;
+		}
+
+		$screen = get_current_screen();
+		if ( ! $screen || 'edit-product' !== $screen->id ) {
+			return;
+		}
+
+		Safaei_Usage::render_widget( 'products_list' );
 	}
 
 	public static function get_status_label( $product_id ) {

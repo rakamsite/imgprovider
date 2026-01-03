@@ -1,8 +1,9 @@
 jQuery(function ($) {
-  function renderCandidates(candidates, $container, productId) {
+  function renderCandidates(candidates, message) {
+    var $container = $('#safaei-candidates');
     $container.empty();
     if (!candidates || !candidates.length) {
-      $container.append('<p>' + safaeiImageLoader.errorText + '</p>');
+      $container.append('<p>' + (message || safaeiImageLoader.errorText) + '</p>');
       return;
     }
     candidates.forEach(function (candidate) {
@@ -28,10 +29,10 @@ jQuery(function ($) {
       if (response.success) {
         renderCandidates(response.data.candidates || [], $container, productId);
       } else {
-        renderCandidates([], $container, productId);
+        renderCandidates([], (response.data && response.data.message) || safaeiImageLoader.errorText);
       }
     }).fail(function () {
-      renderCandidates([], $container, productId);
+      renderCandidates([], safaeiImageLoader.errorText);
     });
   }
 
@@ -89,37 +90,21 @@ jQuery(function ($) {
       action: 'safaei_enqueue_job',
       nonce: safaeiImageLoader.nonce,
       product_id: safaeiImageLoader.productId
-    }).done(function () {
-      location.reload();
+    }).done(function (response) {
+      if (response && response.success) {
+        location.reload();
+        return;
+      }
+      alert((response.data && response.data.message) || safaeiImageLoader.errorText);
+    }).fail(function () {
+      alert(safaeiImageLoader.errorText);
     });
   });
 
-  $(document).on('click', '.safaei-find-image', function (e) {
-    if (!$('#safaei-image-modal').length) {
-      return;
-    }
-    e.preventDefault();
-    var $link = $(this);
-    openModal($link.data('product-id'), $link.data('refcode'));
-  });
-
-  $('#safaei-modal-search-now').on('click', function () {
-    var $modal = $('#safaei-image-modal');
-    var productId = $modal.data('product-id');
-    if (!productId) {
-      return;
-    }
-    var query = $('#safaei-modal-query').val();
-    searchCandidates(productId, query, $('#safaei-modal-candidates'));
-  });
-
-  $(document).on('click', '.safaei-modal-close, #safaei-image-modal .safaei-modal-backdrop', function () {
-    closeModal();
-  });
-
-  $(document).on('keydown', function (e) {
-    if (e.key === 'Escape') {
-      closeModal();
-    }
-  });
+  if (safaeiImageLoader.quotaReached) {
+    $('#safaei-search-now, #safaei-enqueue-job')
+      .prop('disabled', true)
+      .addClass('disabled');
+    renderCandidates([], safaeiImageLoader.quotaText);
+  }
 });

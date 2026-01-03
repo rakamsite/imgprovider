@@ -51,6 +51,8 @@ class Safaei_Metabox {
 				'setText'     => __( 'Set Image', 'safaei-auto-image-loader' ),
 				'searchText'  => __( 'Search Now', 'safaei-auto-image-loader' ),
 				'errorText'   => __( 'An error occurred.', 'safaei-auto-image-loader' ),
+				'quotaReached'=> Safaei_Usage::is_quota_reached(),
+				'quotaText'   => __( 'Daily quota reached. Search is paused until quota resets.', 'safaei-auto-image-loader' ),
 			)
 		);
 	}
@@ -60,15 +62,17 @@ class Safaei_Metabox {
 		$job = Safaei_Queue::get_job_status( $post->ID );
 		$refcode = get_post_meta( $post->ID, '_safaei_refcode', true );
 		$last_error = $job ? $job->last_error : '';
+		$quota_reached = Safaei_Usage::is_quota_reached();
 		?>
 		<p><strong><?php esc_html_e( 'Status:', 'safaei-auto-image-loader' ); ?></strong> <?php echo esc_html( $status ); ?></p>
 		<p><strong><?php esc_html_e( 'Refcode:', 'safaei-auto-image-loader' ); ?></strong> <?php echo esc_html( $refcode ); ?></p>
+		<?php Safaei_Usage::render_widget( 'product_metabox' ); ?>
 		<?php if ( $last_error ) : ?>
 			<p><strong><?php esc_html_e( 'Last error:', 'safaei-auto-image-loader' ); ?></strong> <?php echo esc_html( $last_error ); ?></p>
 		<?php endif; ?>
 		<p>
-			<button type="button" class="button" id="safaei-search-now"><?php esc_html_e( 'Search Now', 'safaei-auto-image-loader' ); ?></button>
-			<button type="button" class="button" id="safaei-enqueue-job"><?php esc_html_e( 'Retry', 'safaei-auto-image-loader' ); ?></button>
+			<button type="button" class="button" id="safaei-search-now" <?php disabled( $quota_reached ); ?>><?php esc_html_e( 'Search Now', 'safaei-auto-image-loader' ); ?></button>
+			<button type="button" class="button" id="safaei-enqueue-job" <?php disabled( $quota_reached ); ?>><?php esc_html_e( 'Retry', 'safaei-auto-image-loader' ); ?></button>
 		</p>
 		<div id="safaei-candidates" style="max-height:240px; overflow:auto;"></div>
 		<?php
@@ -86,6 +90,10 @@ class Safaei_Metabox {
 			wp_send_json_error( array( 'message' => __( 'Product not found.', 'safaei-auto-image-loader' ) ) );
 		}
 
+		if ( Safaei_Usage::is_quota_reached() ) {
+			wp_send_json_error( array( 'message' => __( 'Daily quota reached', 'safaei-auto-image-loader' ) ) );
+		}
+
 		$options = Safaei_Image_Loader::get_settings();
 		$refcode = get_post_meta( $product_id, '_safaei_refcode', true );
 		$custom_query = trim( sanitize_text_field( wp_unslash( $_POST['custom_query'] ?? '' ) ) );
@@ -98,6 +106,9 @@ class Safaei_Metabox {
 
 		foreach ( $queries as $query ) {
 			$new_candidates = Safaei_Provider_Google::fetch_candidates( $query, $options['max_results_per_product'] );
+			if ( is_wp_error( $new_candidates ) ) {
+				wp_send_json_error( array( 'message' => $new_candidates->get_error_message() ) );
+			}
 			foreach ( $new_candidates as $candidate ) {
 				$candidate['query'] = $query;
 				$candidates[] = $candidate;
