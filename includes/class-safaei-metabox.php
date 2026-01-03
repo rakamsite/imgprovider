@@ -96,11 +96,12 @@ class Safaei_Metabox {
 
 		$options = Safaei_Image_Loader::get_settings();
 		$refcode = get_post_meta( $product_id, '_safaei_refcode', true );
-		if ( ! $refcode ) {
+		$custom_query = trim( sanitize_text_field( wp_unslash( $_POST['custom_query'] ?? '' ) ) );
+		if ( ! $refcode && ! $custom_query ) {
 			wp_send_json_error( array( 'message' => __( 'Missing refcode.', 'safaei-auto-image-loader' ) ) );
 		}
 
-		$queries = Safaei_Worker::build_queries( $product, $refcode, $options );
+		$queries = $custom_query ? array( $custom_query ) : Safaei_Worker::build_queries( $product, $refcode, $options );
 		$candidates = array();
 
 		foreach ( $queries as $query ) {

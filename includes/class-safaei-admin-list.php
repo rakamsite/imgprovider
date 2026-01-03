@@ -11,7 +11,9 @@ class Safaei_Admin_List {
 		add_filter( 'post_row_actions', array( __CLASS__, 'add_row_action' ), 10, 2 );
 		add_filter( 'bulk_actions-edit-product', array( __CLASS__, 'register_bulk_action' ) );
 		add_filter( 'handle_bulk_actions-edit-product', array( __CLASS__, 'handle_bulk_action' ), 10, 3 );
+
 		add_action( 'manage_posts_extra_tablenav', array( __CLASS__, 'render_quota_widget' ), 10, 1 );
+
 	}
 
 	public static function add_column( $columns ) {
@@ -52,9 +54,13 @@ class Safaei_Admin_List {
 			'safaei_enqueue_job'
 		);
 
+		$refcode = get_post_meta( $post->ID, '_safaei_refcode', true );
+
 		$actions['safaei_enqueue'] = sprintf(
-			'<a href="%s">%s</a>',
+			'<a href="%s" class="safaei-find-image" data-product-id="%d" data-refcode="%s">%s</a>',
 			esc_url( $url ),
+			(int) $post->ID,
+			esc_attr( $refcode ),
 			esc_html__( 'Find Image', 'safaei-auto-image-loader' )
 		);
 
@@ -127,5 +133,110 @@ class Safaei_Admin_List {
 			default:
 				return __( 'Missing', 'safaei-auto-image-loader' );
 		}
+	}
+
+	public static function enqueue_assets( $hook ) {
+		if ( 'edit.php' !== $hook ) {
+			return;
+		}
+
+		$screen = get_current_screen();
+		if ( ! $screen || 'product' !== $screen->post_type ) {
+			return;
+		}
+
+		wp_enqueue_script(
+			'safaei-image-loader-admin',
+			SAFAEI_IMAGE_LOADER_URL . 'assets/admin.js',
+			array( 'jquery' ),
+			SAFAEI_IMAGE_LOADER_VERSION,
+			true
+		);
+
+		wp_localize_script(
+			'safaei-image-loader-admin',
+			'safaeiImageLoader',
+			array(
+				'nonce'              => wp_create_nonce( 'safaei_image_loader_nonce' ),
+				'ajaxUrl'            => admin_url( 'admin-ajax.php' ),
+				'setText'            => __( 'Set Image', 'safaei-auto-image-loader' ),
+				'searchText'         => __( 'Search Now', 'safaei-auto-image-loader' ),
+				'errorText'          => __( 'An error occurred.', 'safaei-auto-image-loader' ),
+				'modalTitle'         => __( 'Find Image', 'safaei-auto-image-loader' ),
+				'refcodeLabel'       => __( 'Refcode', 'safaei-auto-image-loader' ),
+				'searchPlaceholder'  => __( 'Type to customize the search query', 'safaei-auto-image-loader' ),
+				'closeText'          => __( 'Close', 'safaei-auto-image-loader' ),
+				'searchHelpText'     => __( 'Leave empty to search by refcode.', 'safaei-auto-image-loader' ),
+			)
+		);
+	}
+
+	public static function render_modal() {
+		$screen = get_current_screen();
+		if ( ! $screen || 'edit-product' !== $screen->id ) {
+			return;
+		}
+		?>
+		<style>
+			#safaei-image-modal {
+				position: fixed;
+				inset: 0;
+				z-index: 100000;
+				display: none;
+			}
+			#safaei-image-modal .safaei-modal-backdrop {
+				position: absolute;
+				inset: 0;
+				background: rgba(0, 0, 0, 0.45);
+			}
+			#safaei-image-modal .safaei-modal-content {
+				position: relative;
+				background: #fff;
+				max-width: 720px;
+				margin: 6vh auto;
+				padding: 20px;
+				border-radius: 6px;
+				box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+				max-height: 80vh;
+				overflow: hidden;
+				display: flex;
+				flex-direction: column;
+				gap: 12px;
+			}
+			#safaei-image-modal .safaei-modal-close {
+				position: absolute;
+				top: 12px;
+				right: 12px;
+			}
+			#safaei-image-modal .safaei-modal-body {
+				overflow: auto;
+			}
+			#safaei-modal-candidates {
+				max-height: 360px;
+				overflow: auto;
+			}
+		</style>
+		<div id="safaei-image-modal" aria-hidden="true">
+			<div class="safaei-modal-backdrop"></div>
+			<div class="safaei-modal-content" role="dialog" aria-modal="true" aria-labelledby="safaei-modal-title">
+				<button type="button" class="button-link safaei-modal-close" aria-label="<?php esc_attr_e( 'Close', 'safaei-auto-image-loader' ); ?>">
+					<span class="dashicons dashicons-no-alt"></span>
+				</button>
+				<h2 id="safaei-modal-title"><?php esc_html_e( 'Find Image', 'safaei-auto-image-loader' ); ?></h2>
+				<div class="safaei-modal-body">
+					<p><strong><?php esc_html_e( 'Refcode:', 'safaei-auto-image-loader' ); ?></strong> <span id="safaei-modal-refcode"></span></p>
+					<p>
+						<label for="safaei-modal-query"><?php esc_html_e( 'Search query', 'safaei-auto-image-loader' ); ?></label><br />
+						<input type="text" id="safaei-modal-query" class="regular-text" />
+						<span class="description"><?php esc_html_e( 'Leave empty to search by refcode.', 'safaei-auto-image-loader' ); ?></span>
+					</p>
+					<p>
+						<button type="button" class="button button-primary" id="safaei-modal-search-now"><?php esc_html_e( 'Search Now', 'safaei-auto-image-loader' ); ?></button>
+					</p>
+					<div id="safaei-modal-candidates"></div>
+				</div>
+			</div>
+		</div>
+		<?php
 	}
 }
