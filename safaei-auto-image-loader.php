@@ -20,6 +20,7 @@ define( 'SAFAEI_IMAGE_LOADER_URL', plugin_dir_url( __FILE__ ) );
 require_once SAFAEI_IMAGE_LOADER_PATH . 'includes/class-safaei-image-loader.php';
 require_once SAFAEI_IMAGE_LOADER_PATH . 'includes/class-safaei-settings.php';
 require_once SAFAEI_IMAGE_LOADER_PATH . 'includes/class-safaei-queue.php';
+require_once SAFAEI_IMAGE_LOADER_PATH . 'includes/class-safaei-usage.php';
 require_once SAFAEI_IMAGE_LOADER_PATH . 'includes/class-safaei-provider-google.php';
 require_once SAFAEI_IMAGE_LOADER_PATH . 'includes/class-safaei-worker.php';
 require_once SAFAEI_IMAGE_LOADER_PATH . 'includes/class-safaei-admin-list.php';

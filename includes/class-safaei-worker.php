@@ -15,6 +15,11 @@ class Safaei_Worker {
 			return;
 		}
 
+		if ( Safaei_Usage::is_quota_reached() ) {
+			Safaei_Queue::log( 'Quota reached. Stopping queue processing.' );
+			return;
+		}
+
 		global $wpdb;
 		$jobs_table = $wpdb->prefix . Safaei_Image_Loader::JOBS_TABLE;
 		$batch_size = max( 1, absint( $options['batch_size'] ) );
@@ -27,6 +32,10 @@ class Safaei_Worker {
 		);
 
 		foreach ( $jobs as $job ) {
+			if ( Safaei_Usage::is_quota_reached() ) {
+				Safaei_Queue::log( 'Quota reached. Stopping queue processing.' );
+				break;
+			}
 			self::process_job( $job, $options );
 		}
 	}
@@ -34,6 +43,11 @@ class Safaei_Worker {
 	private static function process_job( $job, $options ) {
 		global $wpdb;
 		$jobs_table = $wpdb->prefix . Safaei_Image_Loader::JOBS_TABLE;
+
+		if ( Safaei_Usage::is_quota_reached() ) {
+			Safaei_Queue::log( 'Quota reached. Stopping job processing.' );
+			return;
+		}
 
 		$wpdb->update(
 			$jobs_table,
@@ -67,7 +81,22 @@ class Safaei_Worker {
 		$candidates = array();
 
 		foreach ( $queries as $query ) {
+			if ( Safaei_Usage::is_quota_reached() ) {
+				self::requeue_job( $job->id, 'Quota reached.' );
+				Safaei_Queue::log( 'Quota reached. Stopping job processing.' );
+				return;
+			}
+
 			$new_candidates = Safaei_Provider_Google::fetch_candidates( $query, $options['max_results_per_product'] );
+			if ( is_wp_error( $new_candidates ) ) {
+				if ( 'safaei_quota_reached' === $new_candidates->get_error_code() ) {
+					self::requeue_job( $job->id, $new_candidates->get_error_message() );
+					Safaei_Queue::log( 'Quota reached. Stopping job processing.' );
+					return;
+				}
+				self::retry_or_fail( $job, $new_candidates->get_error_message() );
+				return;
+			}
 			if ( $new_candidates ) {
 				foreach ( $new_candidates as $candidate ) {
 					$candidate['query'] = $query;
@@ -326,6 +355,23 @@ class Safaei_Worker {
 		update_post_meta( $job->product_id, '_safaei_img_last_status', $status );
 
 		Safaei_Queue::log( 'Job ' . $job->id . ' error: ' . $error, 'error' );
+	}
+
+	private static function requeue_job( $job_id, $message ) {
+		global $wpdb;
+		$jobs_table = $wpdb->prefix . Safaei_Image_Loader::JOBS_TABLE;
+
+		$wpdb->update(
+			$jobs_table,
+			array(
+				'status'     => 'queued',
+				'last_error' => sanitize_text_field( $message ),
+				'updated_at' => current_time( 'mysql' ),
+			),
+			array( 'id' => $job_id ),
+			array( '%s', '%s', '%s' ),
+			array( '%d' )
+		);
 	}
 
 	private static function mark_failed( $job_id, $error ) {

@@ -14,6 +14,10 @@ class Safaei_Provider_Google {
 			return array();
 		}
 
+		if ( Safaei_Usage::is_quota_reached() ) {
+			return new WP_Error( 'safaei_quota_reached', __( 'Daily quota reached', 'safaei-auto-image-loader' ) );
+		}
+
 		$url = add_query_arg(
 			array(
 				'key'        => $api_key,
@@ -35,6 +39,7 @@ class Safaei_Provider_Google {
 
 		if ( is_wp_error( $response ) ) {
 			Safaei_Queue::log( 'Google CSE error: ' . $response->get_error_message(), 'error' );
+			Safaei_Usage::record_request( false );
 			return array();
 		}
 
@@ -43,6 +48,7 @@ class Safaei_Provider_Google {
 
 		if ( 200 !== $status ) {
 			Safaei_Queue::log( 'Google CSE HTTP error: ' . $status, 'error' );
+			Safaei_Usage::record_request( false );
 			return array();
 		}
 
@@ -51,6 +57,7 @@ class Safaei_Provider_Google {
 			if ( ! empty( $data['error']['message'] ) ) {
 				Safaei_Queue::log( 'Google CSE API error: ' . $data['error']['message'], 'error' );
 			}
+			Safaei_Usage::record_request( false );
 			return array();
 		}
 
@@ -65,6 +72,8 @@ class Safaei_Provider_Google {
 				'height'    => isset( $item['image']['height'] ) ? absint( $item['image']['height'] ) : 0,
 			);
 		}
+
+		Safaei_Usage::record_request( ! empty( $candidates ) );
 
 		return $candidates;
 	}

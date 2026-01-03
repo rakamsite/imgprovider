@@ -1,9 +1,9 @@
 jQuery(function ($) {
-  function renderCandidates(candidates) {
+  function renderCandidates(candidates, message) {
     var $container = $('#safaei-candidates');
     $container.empty();
     if (!candidates || !candidates.length) {
-      $container.append('<p>' + safaeiImageLoader.errorText + '</p>');
+      $container.append('<p>' + (message || safaeiImageLoader.errorText) + '</p>');
       return;
     }
     candidates.forEach(function (candidate) {
@@ -28,10 +28,10 @@ jQuery(function ($) {
       if (response.success) {
         renderCandidates(response.data.candidates || []);
       } else {
-        renderCandidates([]);
+        renderCandidates([], (response.data && response.data.message) || safaeiImageLoader.errorText);
       }
     }).fail(function () {
-      renderCandidates([]);
+      renderCandidates([], safaeiImageLoader.errorText);
     });
   }
 
@@ -63,8 +63,21 @@ jQuery(function ($) {
       action: 'safaei_enqueue_job',
       nonce: safaeiImageLoader.nonce,
       product_id: safaeiImageLoader.productId
-    }).done(function () {
-      location.reload();
+    }).done(function (response) {
+      if (response && response.success) {
+        location.reload();
+        return;
+      }
+      alert((response.data && response.data.message) || safaeiImageLoader.errorText);
+    }).fail(function () {
+      alert(safaeiImageLoader.errorText);
     });
   });
+
+  if (safaeiImageLoader.quotaReached) {
+    $('#safaei-search-now, #safaei-enqueue-job')
+      .prop('disabled', true)
+      .addClass('disabled');
+    renderCandidates([], safaeiImageLoader.quotaText);
+  }
 });
