@@ -19,7 +19,16 @@ jQuery(function ($) {
 
   function renderCandidates($container, candidates, message, productId) {
     $container.empty();
+    $container.css({
+      display: 'flex',
+      flexWrap: 'nowrap',
+      gap: '12px',
+      overflowX: 'auto',
+      alignItems: 'flex-start'
+    });
+
     if (!candidates || !candidates.length) {
+      $container.css('display', 'block');
       $container.append('<p>' + (message || safaeiImageLoader.errorText) + '</p>');
       return;
     }
@@ -31,8 +40,8 @@ jQuery(function ($) {
         setCandidate(candidate.image_url, productId);
       });
 
-      var item = $('<div class="safaei-candidate" style="margin-bottom:10px;"></div>');
-      item.append('<img src="' + thumb + '" style="max-width:100%; height:auto; display:block; margin-bottom:5px;" />');
+      var item = $('<div class="safaei-candidate" style="flex:0 0 auto; width:240px;"></div>');
+      item.append('<img src="' + thumb + '" style="width:100%; height:auto; display:block; margin-bottom:5px;" />');
       item.append(button);
       $container.append(item);
     });
