@@ -131,7 +131,7 @@ class Safaei_Metabox {
 		}
 
 		$product_id = absint( $_POST['product_id'] ?? 0 );
-		$image_url = esc_url_raw( $_POST['image_url'] ?? '' );
+		$image_url = esc_url_raw( wp_unslash( $_POST['image_url'] ?? '' ) );
 		if ( ! $product_id || ! $image_url ) {
 			wp_send_json_error( array( 'message' => __( 'Invalid request.', 'safaei-auto-image-loader' ) ) );
 		}

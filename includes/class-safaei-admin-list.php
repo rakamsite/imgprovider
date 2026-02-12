@@ -11,6 +11,8 @@ class Safaei_Admin_List {
 		add_filter( 'post_row_actions', array( __CLASS__, 'add_row_action' ), 10, 2 );
 		add_filter( 'bulk_actions-edit-product', array( __CLASS__, 'register_bulk_action' ) );
 		add_filter( 'handle_bulk_actions-edit-product', array( __CLASS__, 'handle_bulk_action' ), 10, 3 );
+		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
+		add_action( 'admin_footer-edit.php', array( __CLASS__, 'render_modal' ) );
 
 		add_action( 'manage_posts_extra_tablenav', array( __CLASS__, 'render_quota_widget' ), 10, 1 );
 
