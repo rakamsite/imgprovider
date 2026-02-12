@@ -81,7 +81,7 @@ jQuery(function ($) {
     });
   }
 
-  function renderQuickEditLoader(productId, refcode) {
+  function renderQuickEditLoader(productId, refcode, productName) {
     var $row = $('#edit-' + productId);
     if (!$row.length) {
       return;
@@ -92,14 +92,14 @@ jQuery(function ($) {
     var $block = $('#' + blockId);
 
     if (!$block.length) {
-      var refcodeLabel = getText('refcodeLabel', 'Refcode');
-      var searchHelpText = getText('searchHelpText', 'Leave empty to search by refcode.');
-      var searchPlaceholder = getText('searchPlaceholder', 'Type to customize the search query');
-      var searchText = getText('searchText', 'Search Now');
+      var refcodeLabel = getText('refcodeLabel', 'رف‌کد');
+      var searchHelpText = getText('searchHelpText', 'برای جستجو با رف‌کد، این فیلد را خالی بگذارید.');
+      var searchPlaceholder = getText('searchPlaceholder', 'برای شخصی‌سازی عبارت جستجو بنویسید');
+      var searchText = getText('searchText', 'جستجو');
 
       $block = $(
         '<div id="' + blockId + '" class="safaei-inline-loader" style="margin-top:12px; padding-top:12px; border-top:1px solid #dcdcde;">' +
-          '<p><strong>' + getText('modalTitle', 'Find Image') + '</strong></p>' +
+          '<p><strong class="safaei-inline-title"></strong></p>' +
           '<p><strong>' + refcodeLabel + ':</strong> <span class="safaei-inline-refcode"></span></p>' +
           '<p>' +
             '<input type="text" class="regular-text safaei-inline-query" placeholder="' + searchPlaceholder + '" /> ' +
@@ -119,6 +119,11 @@ jQuery(function ($) {
       });
     }
 
+    var titleTemplate = getText('modalTitleTemplate', 'پیدا کردن تصویر برای %s');
+    var defaultTitle = getText('modalTitle', 'پیدا کردن تصویر');
+    var resolvedTitle = productName ? titleTemplate.replace('%s', productName) : defaultTitle;
+
+    $block.find('.safaei-inline-title').text(resolvedTitle);
     $block.find('.safaei-inline-refcode').text(refcode || '-');
 
     $row.addClass('safaei-inline-focus');
@@ -164,6 +169,7 @@ jQuery(function ($) {
     var $link = $(this);
     var productId = parseInt($link.data('product-id'), 10);
     var refcode = $link.data('refcode') || '';
+    var productName = $link.data('product-name') || '';
 
     if (!productId) {
       return;
@@ -171,7 +177,7 @@ jQuery(function ($) {
 
     $('.inline-edit-row').removeClass('safaei-inline-focus');
     inlineEditPost.edit(productId);
-    renderQuickEditLoader(productId, refcode);
+    renderQuickEditLoader(productId, refcode, productName);
   });
 
   $(document).on('click', '.editinline, .cancel', function () {

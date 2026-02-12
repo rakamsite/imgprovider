@@ -40,7 +40,7 @@ class Safaei_Admin_List {
 		if ( Safaei_Usage::is_quota_reached() ) {
 			$actions['safaei_enqueue'] = sprintf(
 				'<span class="safaei-disabled-action">%s</span>',
-				esc_html__( 'Find Image', 'safaei-auto-image-loader' )
+				esc_html__( 'پیدا کردن تصویر', 'safaei-auto-image-loader' )
 			);
 			return $actions;
 		}
@@ -59,11 +59,12 @@ class Safaei_Admin_List {
 		$refcode = get_post_meta( $post->ID, '_safaei_refcode', true );
 
 		$actions['safaei_enqueue'] = sprintf(
-			'<a href="%s" class="safaei-find-image" data-product-id="%d" data-refcode="%s">%s</a>',
+			'<a href="%s" class="safaei-find-image" data-product-id="%d" data-refcode="%s" data-product-name="%s">%s</a>',
 			esc_url( $url ),
 			(int) $post->ID,
 			esc_attr( $refcode ),
-			esc_html__( 'Find Image', 'safaei-auto-image-loader' )
+			esc_attr( get_the_title( $post ) ),
+			esc_html__( 'پیدا کردن تصویر', 'safaei-auto-image-loader' )
 		);
 
 		return $actions;
@@ -73,7 +74,7 @@ class Safaei_Admin_List {
 		if ( Safaei_Usage::is_quota_reached() ) {
 			return $actions;
 		}
-		$actions['safaei_find_images'] = __( 'Safaei: Find Images', 'safaei-auto-image-loader' );
+		$actions['safaei_find_images'] = __( 'صفایی: پیدا کردن تصویر', 'safaei-auto-image-loader' );
 		return $actions;
 	}
 
@@ -161,14 +162,15 @@ class Safaei_Admin_List {
 			array(
 				'nonce'              => wp_create_nonce( 'safaei_image_loader_nonce' ),
 				'ajaxUrl'            => admin_url( 'admin-ajax.php' ),
-				'setText'            => __( 'Set Image', 'safaei-auto-image-loader' ),
-				'searchText'         => __( 'Search Now', 'safaei-auto-image-loader' ),
-				'errorText'          => __( 'An error occurred.', 'safaei-auto-image-loader' ),
-				'modalTitle'         => __( 'Find Image', 'safaei-auto-image-loader' ),
-				'refcodeLabel'       => __( 'Refcode', 'safaei-auto-image-loader' ),
-				'searchPlaceholder'  => __( 'Type to customize the search query', 'safaei-auto-image-loader' ),
-				'closeText'          => __( 'Close', 'safaei-auto-image-loader' ),
-				'searchHelpText'     => __( 'Leave empty to search by refcode.', 'safaei-auto-image-loader' ),
+				'setText'            => __( 'انتخاب تصویر', 'safaei-auto-image-loader' ),
+				'searchText'         => __( 'جستجو', 'safaei-auto-image-loader' ),
+				'errorText'          => __( 'خطایی رخ داد.', 'safaei-auto-image-loader' ),
+				'modalTitle'         => __( 'پیدا کردن تصویر', 'safaei-auto-image-loader' ),
+				'modalTitleTemplate' => __( 'پیدا کردن تصویر برای %s', 'safaei-auto-image-loader' ),
+				'refcodeLabel'       => __( 'رف‌کد', 'safaei-auto-image-loader' ),
+				'searchPlaceholder'  => __( 'برای شخصی‌سازی عبارت جستجو بنویسید', 'safaei-auto-image-loader' ),
+				'closeText'          => __( 'بستن', 'safaei-auto-image-loader' ),
+				'searchHelpText'     => __( 'برای جستجو با رف‌کد، این فیلد را خالی بگذارید.', 'safaei-auto-image-loader' ),
 			)
 		);
 	}
@@ -221,19 +223,19 @@ class Safaei_Admin_List {
 		<div id="safaei-image-modal" aria-hidden="true">
 			<div class="safaei-modal-backdrop"></div>
 			<div class="safaei-modal-content" role="dialog" aria-modal="true" aria-labelledby="safaei-modal-title">
-				<button type="button" class="button-link safaei-modal-close" aria-label="<?php esc_attr_e( 'Close', 'safaei-auto-image-loader' ); ?>">
+				<button type="button" class="button-link safaei-modal-close" aria-label="<?php esc_attr_e( 'بستن', 'safaei-auto-image-loader' ); ?>">
 					<span class="dashicons dashicons-no-alt"></span>
 				</button>
-				<h2 id="safaei-modal-title"><?php esc_html_e( 'Find Image', 'safaei-auto-image-loader' ); ?></h2>
+				<h2 id="safaei-modal-title"><?php esc_html_e( 'پیدا کردن تصویر', 'safaei-auto-image-loader' ); ?></h2>
 				<div class="safaei-modal-body">
-					<p><strong><?php esc_html_e( 'Refcode:', 'safaei-auto-image-loader' ); ?></strong> <span id="safaei-modal-refcode"></span></p>
+					<p><strong><?php esc_html_e( 'رف‌کد:', 'safaei-auto-image-loader' ); ?></strong> <span id="safaei-modal-refcode"></span></p>
 					<p>
-						<label for="safaei-modal-query"><?php esc_html_e( 'Search query', 'safaei-auto-image-loader' ); ?></label><br />
+						<label for="safaei-modal-query"><?php esc_html_e( 'عبارت جستجو', 'safaei-auto-image-loader' ); ?></label><br />
 						<input type="text" id="safaei-modal-query" class="regular-text" />
-						<span class="description"><?php esc_html_e( 'Leave empty to search by refcode.', 'safaei-auto-image-loader' ); ?></span>
+						<span class="description"><?php esc_html_e( 'برای جستجو با رف‌کد، این فیلد را خالی بگذارید.', 'safaei-auto-image-loader' ); ?></span>
 					</p>
 					<p>
-						<button type="button" class="button button-primary" id="safaei-modal-search-now"><?php esc_html_e( 'Search Now', 'safaei-auto-image-loader' ); ?></button>
+						<button type="button" class="button button-primary" id="safaei-modal-search-now"><?php esc_html_e( 'جستجو', 'safaei-auto-image-loader' ); ?></button>
 					</p>
 					<div id="safaei-modal-candidates"></div>
 				</div>
