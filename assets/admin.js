@@ -3,6 +3,16 @@ jQuery(function ($) {
     return;
   }
 
+  if (!$('#safaei-inline-focus-style').length) {
+    $('head').append(
+      '<style id="safaei-inline-focus-style">' +
+        'tr.safaei-inline-focus td > * { display: none; }' +
+        'tr.safaei-inline-focus td > .safaei-inline-loader,' +
+        'tr.safaei-inline-focus td > .inline-edit-save { display: block; }' +
+      '</style>'
+    );
+  }
+
   function getText(key, fallback) {
     return safaeiImageLoader[key] || fallback;
   }
@@ -101,6 +111,8 @@ jQuery(function ($) {
     }
 
     $block.find('.safaei-inline-refcode').text(refcode || '-');
+
+    $row.addClass('safaei-inline-focus');
   }
 
   $('#safaei-search-now').on('click', function (e) {
@@ -148,8 +160,13 @@ jQuery(function ($) {
       return;
     }
 
+    $('.inline-edit-row').removeClass('safaei-inline-focus');
     inlineEditPost.edit(productId);
     renderQuickEditLoader(productId, refcode);
+  });
+
+  $(document).on('click', '.editinline, .cancel', function () {
+    $('.inline-edit-row').removeClass('safaei-inline-focus');
   });
 
   if (safaeiImageLoader.quotaReached) {
