@@ -1,5 +1,9 @@
 jQuery(function ($) {
-  function renderCandidates(candidates, message) {
+  if (!window.safaeiImageLoader) {
+    return;
+  }
+
+  function renderCandidates(candidates, message, productId) {
     var $container = $('#safaei-candidates');
     $container.empty();
     if (!candidates || !candidates.length) {
@@ -19,7 +23,7 @@ jQuery(function ($) {
     });
   }
 
-  function searchCandidates(productId, customQuery, $container) {
+  function searchCandidates(productId, customQuery) {
     $.post(safaeiImageLoader.ajaxUrl, {
       action: 'safaei_search_candidates',
       nonce: safaeiImageLoader.nonce,
@@ -27,12 +31,12 @@ jQuery(function ($) {
       custom_query: customQuery || ''
     }).done(function (response) {
       if (response.success) {
-        renderCandidates(response.data.candidates || [], $container, productId);
+        renderCandidates(response.data.candidates || [], '', productId);
       } else {
-        renderCandidates([], (response.data && response.data.message) || safaeiImageLoader.errorText);
+        renderCandidates([], (response.data && response.data.message) || safaeiImageLoader.errorText, productId);
       }
     }).fail(function () {
-      renderCandidates([], safaeiImageLoader.errorText);
+      renderCandidates([], safaeiImageLoader.errorText, productId);
     });
   }
 
@@ -53,32 +57,12 @@ jQuery(function ($) {
     });
   }
 
-  function openModal(productId, refcode) {
-    var $modal = $('#safaei-image-modal');
-    if (!$modal.length) {
-      return;
-    }
-    $modal.data('product-id', productId);
-    $('#safaei-modal-refcode').text(refcode || '-');
-    $('#safaei-modal-query').val('').attr('placeholder', refcode || '');
-    $('#safaei-modal-candidates').empty();
-    $modal.show().attr('aria-hidden', 'false');
-  }
-
-  function closeModal() {
-    var $modal = $('#safaei-image-modal');
-    if (!$modal.length) {
-      return;
-    }
-    $modal.hide().attr('aria-hidden', 'true');
-  }
-
   $('#safaei-search-now').on('click', function (e) {
     e.preventDefault();
     if (!safaeiImageLoader.productId) {
       return;
     }
-    searchCandidates(safaeiImageLoader.productId, '', $('#safaei-candidates'));
+    searchCandidates(safaeiImageLoader.productId, '');
   });
 
   $('#safaei-enqueue-job').on('click', function (e) {
@@ -105,6 +89,6 @@ jQuery(function ($) {
     $('#safaei-search-now, #safaei-enqueue-job')
       .prop('disabled', true)
       .addClass('disabled');
-    renderCandidates([], safaeiImageLoader.quotaText);
+    renderCandidates([], safaeiImageLoader.quotaText, safaeiImageLoader.productId || 0);
   }
 });
